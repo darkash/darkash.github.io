@@ -1,23 +1,50 @@
-import logo from './logo.svg';
-import './App.css';
+import './styles/App.css';
+import {
+  BrowserRouter as Router,
+  Switch,
+  Route,
+  // Link
+} from "react-router-dom";
+import IDWSMigrator from './pages/idwsMIgrator';
 
 function App() {
+  // /**
+  //  * @type { { name: string; path: string; }[] }
+  //  */
+  // const pages = [
+  //   {
+  //     name: 'Home',
+  //     path: ''
+  //   },
+  //   {
+  //     name: 'IDWS Migrator',
+  //     path: 'idwsMigrator'
+  //   },
+  // ];
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <Router>
+      <div>
+        {/* <h1>Pages</h1>
+        <nav>
+          <ul>
+            {pages.map((page) => {
+              return (<li key={page.path}>
+                <Link to={`/${page.path}`}>{page.name}</Link>
+              </li>);
+            })}
+          </ul>
+        </nav> */}
+
+        {/* A <Switch> looks through its children <Route>s and
+            renders the first one that matches the current URL. */}
+        <Switch>
+          <Route exact path="/">
+            <IDWSMigrator />
+          </Route>
+        </Switch>
+      </div>
+    </Router>
     </div>
   );
 }
