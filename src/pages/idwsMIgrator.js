@@ -27,7 +27,7 @@ class IDWSMigrator extends React.Component {
     newDomainRegexes() {
         return {
             default: /\[URL\](http|https):\/\/forum\.indowebster\.com\/.+\?(?<thread>t=\d+){0,1}&{0,1}(?<post>p=\d+){0,1}.+\[\/URL\]/i,
-            customTitle: /\[URL="{0,1}(http|https):\/\/forum\.indowebster\.com\/.+\?(?<thread>t=\d+){0,1}&{0,1}(?<post>p=\d+){0,1}.*"{0,1}\](?<title>.*)\[\/URL\]/i,
+            customTitle: /\[URL="{0,1}(http|https):\/\/forum\.indowebster\.com\/.+\?(?<thread>t=\d+){0,1}&{0,1}(?<post>p=\d+){0,1}[^"]*"{0,1}\](?<title>.*)\[\/URL\]/i,
         };
     }
 
@@ -38,7 +38,7 @@ class IDWSMigrator extends React.Component {
     oldDomainRegexes() {
         return {
             default: /\[URL\](http|https):\/\/www\.indowebster\.web\.id\/.+\?(?<thread>t=\d+){0,1}&{0,1}(?<post>p=\d+){0,1}.+\[\/URL\]/i,
-            customTitle: /\[URL="{0,1}(http|https):\/\/www\.indowebster\.web\.id\/.+\?(?<thread>t=\d+){0,1}&{0,1}(?<post>p=\d+){0,1}.*"{0,1}\](?<title>.*)\[\/URL\]/i,
+            customTitle: /\[URL="{0,1}(http|https):\/\/www\.indowebster\.web\.id\/.+\?(?<thread>t=\d+){0,1}&{0,1}(?<post>p=\d+){0,1}[^"]*"{0,1}\](?<title>.*)\[\/URL\]/i,
         };
     }
 
