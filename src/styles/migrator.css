@@ -1,0 +1,12 @@
+pre {
+    height: auto;
+    max-height: 200px;
+    overflow: auto;
+    background-color: #eeeeee;
+    word-break: normal !important;
+    word-wrap: break-word;
+    white-space: pre !important;
+    text-align: left;
+    padding: 10px;
+}
+  
