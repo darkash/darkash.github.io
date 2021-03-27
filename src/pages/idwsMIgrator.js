@@ -66,38 +66,115 @@ class IDWSMigrator extends React.Component {
     }
 
     /**
+     * @returns {RegExp}
+     */
+    postUrlRegex() {
+        return /\[url\].+\[\/url\]|\[url=.+].*\[\/url\]/i;
+    }
+
+    /**
+     * @returns {RegExp}
+     */
+    threadUrlRegex() {
+        return /\[url\].+\[\/url\]|\[url=.+].*\[\/url\]/i;
+    }
+
+    /**
+     * @returns {string}
+     */
+    occurenceKeyword() {
+        return '[/URL]';
+    }
+
+    /**
+     * @param {string} text
+     * @returns {boolean}
+     */
+    isMultipleUrlOccurence(text) {
+        if (text.toUpperCase().indexOf('[/URL]') === text.toUpperCase().lastIndexOf('[/URL]')) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * @param {*} text 
+     * @param {{ thread: string; title?: string }} data
+     * @returns {string}
+     */
+    convertToThread(text, data) {
+        const { thread } = data;
+        const threadTitle = data.title || `[PLAIN]https://forum.idws.id/threads/${thread.slice(2, thread.length)}[/PLAIN]`;
+        const replacement = text.replace(this.threadUrlRegex(), `[U][THREAD=${thread.slice(2, thread.length)}]${threadTitle}[/THREAD][/U]`);
+        return replacement;
+    }
+
+    /**
+     * @param {*} text 
+     * @param {{ post: string; title?: string }} data
+     * @returns {string}
+     */
+    convertToPost(text, data) {
+        const { post } = data;
+        const postTitle = data.title || `[PLAIN]https://forum.idws.id/posts/${post.slice(2, post.length)}[/PLAIN]`;
+        const replacement = text.replace(this.postUrlRegex(), `[U][POST=${post.slice(2, post.length)}]${postTitle}[/POST][/U]`);
+        return replacement;
+    }
+
+    /**
+     * @param {string} text
+     * @returns {string}
+     */
+    singleOccurenceConversion(text) {
+        const data = this.extractPostData(text);
+        if (data === null) {
+            return text;
+        }
+
+        if (typeof data.post === 'undefined' && data.thread.length !== 0) {
+            return this.convertToThread(text, { thread: data.thread, title: data.title });
+        }
+
+        if (typeof data.post !== 'undefined' && data.post.length !== 0) {
+            return this.convertToPost(text, { post: data.post, title: data.title });
+        }
+            
+        console.log(`URL might be unsupported:\n${text}`);
+        return text;
+    }
+
+    /**
+     * @param {string} text
+     * @returns {string}
+     */
+    multipleOccurenceConversion(text) {
+        let currentIndex = 0;
+        let offset = 0;
+        const lastIndex = text.lastIndexOf(this.occurenceKeyword());
+        let tempLine = [];
+        while(currentIndex !== lastIndex) {
+            const occurenceIndex = text.indexOf(this.occurenceKeyword());
+            const slicedText = text.slice(currentIndex + offset, occurenceIndex + this.occurenceKeyword().length);
+            tempLine.push(this.singleOccurenceConversion(slicedText));
+            offset = this.occurenceKeyword().length;
+            currentIndex = occurenceIndex;
+        }
+        return tempLine.join('');
+    }
+
+    /**
      * @param {string} text
      * @returns {string}
      */
     convert(text) {
-        const postUrlRegex = /\[url\].+\[\/url\]|\[url=.+].*\[\/url\]/i;
-        const threadUrlRegex = /\[url\].+\[\/url\]|\[url=.+].*\[\/url\]/i;
         let outputLineArr = [];
         const postSplit = text.split('\n');
         postSplit.forEach((line) => {
-            const data = this.extractPostData(line);
-            if (data === null) {
-                outputLineArr.push(line);
+            if (this.isMultipleUrlOccurence(line)) {
+                outputLineArr.push(this.multipleOccurenceConversion(line));
                 return;
             }
-
-            if (typeof data.post === 'undefined' && data.thread.length !== 0) {
-                const { thread } = data;
-                const threadTitle = data.title || `[PLAIN]https://forum.idws.id/threads/${thread.slice(2, thread.length)}[/PLAIN]`;
-                const replacement = line.replace(threadUrlRegex, `[U][THREAD=${thread.slice(2, thread.length)}]${threadTitle}[/THREAD][/U]`);
-                outputLineArr.push(replacement);
-            }
-
-            if (typeof data.post !== 'undefined' && data.post.length !== 0) {
-                const { post } = data;
-                const postTitle = data.title || `[PLAIN]https://forum.idws.id/posts/${post.slice(2, post.length)}[/PLAIN]`;
-                const replacement = line.replace(postUrlRegex, `[U][POST=${post.slice(2, post.length)}]${postTitle}[/POST][/U]`);
-                outputLineArr.push(replacement);
-                return;
-            }
-            
-            console.log(`URL might be malformed or unsupported:\n${line}`);
-            outputLineArr.push(line); // fallback
+            outputLineArr.push(this.singleOccurenceConversion(line));
         });
         return outputLineArr.join('\n');
     }
@@ -106,6 +183,10 @@ class IDWSMigrator extends React.Component {
      * @param {string} input
      */
     async transform(input) {
+        if (typeof input === 'undefined' || input === null || input.length === 0) {
+            alert('input is empty');
+            return;
+        }
         const result = this.convert(input);
         this.setState({ output: result });
     }
