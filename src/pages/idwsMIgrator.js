@@ -50,9 +50,9 @@ class IDWSMigrator extends React.Component {
         const oldDomain = 'www.indowebster.web.id';
         let regexes;
         if (text.search(oldDomain) === -1) {
-            regexes = this.oldDomainRegexes();
-        } else {
             regexes = this.newDomainRegexes();
+        } else {
+            regexes = this.oldDomainRegexes();
         }
         const match = text.match(regexes.customTitle) || text.match(regexes.default);
         if (match === null) {
