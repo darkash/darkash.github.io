@@ -20,6 +20,8 @@ class IDWSMigrator extends React.Component {
     
     /**
      * @description handle forum.indowebster.com domain
+     * default: [URL]https://forum.indowebster.com/showthread.php?t=xxxx&p=xxxxx[/url]
+     * customTitle: [url=https://forum.indowebster.com/showthread.php?t=xxxx&p=xxxxx]IDWS[/url]
      * @returns {IRegexes}
      */
     newDomainRegexes() {
@@ -42,39 +44,60 @@ class IDWSMigrator extends React.Component {
 
     /**
      * @param {string} text
+     * @returns {null | {post?: string; thread?: string; title?: string} }
+     */
+    extractPostData(text) {
+        const oldDomain = 'www.indowebster.web.id';
+        let regexes;
+        if (text.search(oldDomain) === -1) {
+            regexes = this.oldDomainRegexes();
+        } else {
+            regexes = this.newDomainRegexes();
+        }
+        const match = text.match(regexes.customTitle) || text.match(regexes.default);
+        if (match === null) {
+            return null;
+        }
+        return {
+            post: match.groups.post,
+            thread: match.groups.thread,
+            title: match.groups.title, // may be undefined if using default regex definition
+        };
+    }
+
+    /**
+     * @param {string} text
      * @returns {string}
      */
     convert(text) {
-        // [URL]https://forum.indowebster.com/showthread.php?t=xxxx&p=xxxxx[/url]
-        const defaultRegex = /\[URL\](http|https):\/\/forum\.indowebster\.com\/.+\?(?<thread>t=\d+){0,1}&{0,1}(?<post>p=\d+){0,1}.+\[\/URL\]/i;
-        // [url=https://forum.indowebster.com/showthread.php?t=xxxx&p=xxxxx]IDWS[/url]
-        const customRegex = /\[URL="{0,1}(http|https):\/\/forum\.indowebster\.com\/.+\?(?<thread>t=\d+){0,1}&{0,1}(?<post>p=\d+){0,1}.*"{0,1}\](?<title>.*)\[\/URL\]/i;
         const postUrlRegex = /\[url\].+\[\/url\]|\[url=.+].*\[\/url\]/i;
         const threadUrlRegex = /\[url\].+\[\/url\]|\[url=.+].*\[\/url\]/i;
         let outputLineArr = [];
         const postSplit = text.split('\n');
         postSplit.forEach((line) => {
-            let match;
-            match = line.match(defaultRegex) || line.match(customRegex);
-            if (match === null) {
+            const data = this.extractPostData(line);
+            if (data === null) {
                 outputLineArr.push(line);
                 return;
             }
-            const { post, thread, title } = match.groups;
-            if (typeof post === 'undefined' && typeof thread === 'undefined') {
-                outputLineArr.push(line);
-                return;
+
+            if (typeof data.post === 'undefined' && data.thread.length !== 0) {
+                const { thread } = data;
+                const threadTitle = data.title || `[PLAIN]https://forum.idws.id/threads/${thread.slice(2, thread.length)}[/PLAIN]`;
+                const replacement = line.replace(threadUrlRegex, `[U][THREAD=${thread.slice(2, thread.length)}]${threadTitle}[/THREAD][/U]`);
+                outputLineArr.push(replacement);
             }
-            if (typeof post !== 'undefined' && post.length > 0) {
-                const postTitle = title || `[PLAIN]https://forum.idws.id/posts/${post.slice(2, post.length)}[/PLAIN]`;
+
+            if (data.post.length !== 0) {
+                const { post } = data;
+                const postTitle = data.title || `[PLAIN]https://forum.idws.id/posts/${post.slice(2, post.length)}[/PLAIN]`;
                 const replacement = line.replace(postUrlRegex, `[U][POST=${post.slice(2, post.length)}]${postTitle}[/POST][/U]`);
                 outputLineArr.push(replacement);
                 return;
             }
-            const threadTitle = title || `[PLAIN]https://forum.idws.id/threads/${thread.slice(2, thread.length)}[/PLAIN]`;
-            const replacement = line.replace(threadUrlRegex, `[U][THREAD=${thread.slice(2, thread.length)}]${threadTitle}[/THREAD][/U]`);
-            outputLineArr.push(replacement);
-            return;
+            
+            console.log(`URL might be malformed or unsupported:\n${line}`);
+            outputLineArr.push(line); // fallback
         });
         return outputLineArr.join('\n');
     }
