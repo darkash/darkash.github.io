@@ -88,7 +88,7 @@ class IDWSMigrator extends React.Component {
                 outputLineArr.push(replacement);
             }
 
-            if (data.post.length !== 0) {
+            if (typeof data.post !== 'undefined' && data.post.length !== 0) {
                 const { post } = data;
                 const postTitle = data.title || `[PLAIN]https://forum.idws.id/posts/${post.slice(2, post.length)}[/PLAIN]`;
                 const replacement = line.replace(postUrlRegex, `[U][POST=${post.slice(2, post.length)}]${postTitle}[/POST][/U]`);
