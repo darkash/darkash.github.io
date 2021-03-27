@@ -131,12 +131,12 @@ class IDWSMigrator extends React.Component {
             return text;
         }
 
-        if (typeof data.post === 'undefined' && data.thread.length !== 0) {
-            return this.convertToThread(text, { thread: data.thread, title: data.title });
-        }
-
         if (typeof data.post !== 'undefined' && data.post.length !== 0) {
             return this.convertToPost(text, { post: data.post, title: data.title });
+        }
+
+        if (typeof data.thread !== 'undefined' && data.thread.length !== 0) {
+            return this.convertToThread(text, { thread: data.thread, title: data.title });
         }
             
         console.log(`URL might be unsupported:\n${text}`);
@@ -153,11 +153,16 @@ class IDWSMigrator extends React.Component {
         const lastIndex = text.lastIndexOf(this.occurenceKeyword());
         let tempLine = [];
         while(currentIndex !== lastIndex) {
-            const occurenceIndex = text.indexOf(this.occurenceKeyword());
+            const occurenceIndex = text.indexOf(this.occurenceKeyword(), currentIndex + offset);
             const slicedText = text.slice(currentIndex + offset, occurenceIndex + this.occurenceKeyword().length);
             tempLine.push(this.singleOccurenceConversion(slicedText));
             offset = this.occurenceKeyword().length;
             currentIndex = occurenceIndex;
+        }
+        // handle excess text after the URL tag
+        if (lastIndex + this.occurenceKeyword().length < text.length) {
+            const lastSlice = text.slice(lastIndex + offset, text.length);
+            tempLine.push(lastSlice);
         }
         return tempLine.join('');
     }
@@ -188,7 +193,7 @@ class IDWSMigrator extends React.Component {
             return;
         }
         const result = this.convert(input);
-        this.setState({ output: result });
+        await this.setState({ output: result });
     }
 
     Result() {
@@ -210,7 +215,7 @@ class IDWSMigrator extends React.Component {
                 <br></br>
                 <button value='Convert!' onClick={async (e) => {
                     e.preventDefault();
-                    this.setState({ input: this.inputElement.value });
+                    await this.setState({ input: this.inputElement.value });
                     await this.transform(this.state.input);
                 }}>Convert!</button>
             </form>
